@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PixelForge sprite lab</title>
+    <style>
+      body {
+        margin: 0;
+        background: #0d0f14;
+        color: #d9dce4;
+        font: 12px ui-monospace, Menlo, Consolas, monospace;
+      }
+      h1 {
+        font-size: 14px;
+        padding: 16px 20px;
+        margin: 0;
+        border-bottom: 1px solid #232733;
+      }
+      .row {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 16px 20px;
+        border-bottom: 1px solid #1c202a;
+      }
+      .row-label {
+        width: 190px;
+        flex: 0 0 auto;
+      }
+      .row-label b {
+        display: block;
+        font-size: 12px;
+        color: #c8f45c;
+        margin-bottom: 4px;
+      }
+      .row-label span {
+        color: #7c8294;
+        font-size: 10px;
+        line-height: 1.5;
+        display: block;
+      }
+      .cells {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      figure {
+        margin: 0;
+        text-align: center;
+      }
+      canvas {
+        display: block;
+        image-rendering: pixelated;
+        background: #151922;
+        border: 1px solid #242a36;
+      }
+      figcaption {
+        font-size: 9px;
+        color: #6e7587;
+        margin-top: 3px;
+        height: 12px;
+      }
+      .strip {
+        padding: 10px 20px;
+        border-bottom: 1px solid #1c202a;
+      }
+      .strip b {
+        display: block;
+        font-size: 10px;
+        color: #7c8294;
+        margin-bottom: 6px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      body > #out > .row-label {
+        padding: 12px 20px 0;
+        width: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PixelForge lab — 6× views</h1>
+    <div id="out"></div>
+    <script type="module" src="./lab.js"></script>
+  </body>
+</html>

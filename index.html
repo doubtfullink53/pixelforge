@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PixelForge — pixel art character generator</title>
+    <meta
+      name="description"
+      content="Describe a character and generate game-ready pixel art: an instant local geometry engine, or an AI model through your own API key. Eight directions, five animations, sprite sheet export."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-mode="local">
+    <header class="topbar">
+      <div class="brand">
+        <canvas id="logo" width="16" height="16" aria-hidden="true"></canvas>
+        <div class="brand-copy">
+          <span class="brand-name">Pixel<em>Forge</em></span>
+          <span class="brand-tag">procedural sprite studio</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="local-dot" id="engine-badge" title="The local engine makes no network requests">
+          <i></i> local engine
+        </span>
+        <button class="btn ghost" id="btn-surprise">Surprise me</button>
+        <button class="btn primary" id="btn-export">Export sheet</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel panel-left" aria-label="Generator controls">
+        <div class="mode-switch" id="mode-switch" role="group" aria-label="Sprite source">
+          <button type="button" data-mode="local" aria-pressed="true">
+            Local engine
+            <small>instant · seeded</small>
+          </button>
+          <button type="button" data-mode="ai" aria-pressed="false">
+            AI model
+            <small>your key</small>
+          </button>
+        </div>
+
+        <section class="group">
+          <div class="group-head">
+            <h2><span class="step">01</span> Describe</h2>
+            <span class="hint" id="detected">—</span>
+          </div>
+          <label class="sr-only" for="prompt">Character prompt</label>
+          <textarea
+            id="prompt"
+            rows="3"
+            spellcheck="false"
+            placeholder="an armored knight with a crimson cape"
+          ></textarea>
+          <div class="chips" id="chips"></div>
+        </section>
+
+        <section class="group proc-only">
+          <div class="group-head">
+            <h2><span class="step">02</span> Character</h2>
+          </div>
+          <div class="field-row">
+            <label for="archetype">Archetype</label>
+            <select id="archetype"></select>
+          </div>
+          <div class="field-row">
+            <label for="weapon">Weapon</label>
+            <select id="weapon"></select>
+          </div>
+          <div class="field-row">
+            <label for="hat">Headwear</label>
+            <select id="hat"></select>
+          </div>
+          <div class="toggle-row" id="extras">
+            <button class="toggle" id="toggle-cape" aria-pressed="false">Cape</button>
+            <button class="toggle" id="toggle-wings" aria-pressed="false">Wings</button>
+            <button class="toggle" id="toggle-glow" aria-pressed="false">Glow</button>
+          </div>
+        </section>
+
+        <section class="group proc-only">
+          <div class="group-head">
+            <h2><span class="step">03</span> Palette</h2>
+            <button class="link-btn" id="btn-hue-auto">auto</button>
+          </div>
+          <label class="slider-row" for="hue">
+            <span>Hue</span>
+            <input id="hue" type="range" min="0" max="359" value="218" />
+            <output id="hue-value">218°</output>
+          </label>
+          <div class="hue-strip" id="hue-strip" aria-hidden="true"></div>
+        </section>
+
+        <section class="group proc-only">
+          <div class="group-head">
+            <h2><span class="step">04</span> Seed</h2>
+          </div>
+          <div class="seed-row">
+            <input id="seed" type="text" spellcheck="false" aria-label="Seed" />
+            <button class="icon-btn" id="btn-dice" title="Random seed" aria-label="Random seed">⚄</button>
+          </div>
+          <p class="micro">
+            Same prompt + seed + settings always render the same sprite. Tweak anything and it re-renders live.
+          </p>
+        </section>
+
+        <section class="group ai-only" id="ai-panel">
+          <div class="group-head">
+            <h2><span class="step">02</span> AI model</h2>
+            <span class="hint" id="ai-model">—</span>
+          </div>
+
+          <p class="ai-status" id="ai-status">
+            <i></i>
+            <span id="ai-status-text">Checking the proxy…</span>
+          </p>
+
+          <div class="field-row">
+            <label for="ai-size">Sprite size</label>
+            <select id="ai-size">
+              <option value="32" selected>32 × 32</option>
+              <option value="48">48 × 48</option>
+              <option value="64">64 × 64</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="ai-colors">Palette</label>
+            <select id="ai-colors">
+              <option value="12">12 colors</option>
+              <option value="16" selected>16 colors</option>
+              <option value="24">24 colors</option>
+              <option value="32">32 colors</option>
+            </select>
+          </div>
+          <div class="toggle-row">
+            <button class="toggle" id="toggle-ai-outline" aria-pressed="true">Outline</button>
+            <button class="toggle" id="toggle-ai-bg" aria-pressed="false">Keep backdrop</button>
+          </div>
+
+          <button class="btn primary wide" id="btn-ai-generate">
+            <span id="btn-ai-label">Generate sprite</span>
+          </button>
+          <p class="micro" id="ai-note">
+            Runs one image model call per generate. The key stays in <code>.env</code> on this machine.
+          </p>
+
+          <div class="ai-setup" id="ai-setup" hidden>
+            <b>Finishing setup</b>
+            <p id="ai-setup-copy">
+              Add the key to a <code>.env</code> file next to <code>server.py</code>, then restart the proxy:
+            </p>
+            <p class="ai-setup-key">Missing: <code id="ai-missing">AI_IMAGE_KEY</code></p>
+            <pre id="ai-setup-snippet">AI_PROVIDER=wavespeed
+AI_IMAGE_KEY=your_key_here</pre>
+            <a id="ai-setup-link" href="#" target="_blank" rel="noreferrer">Get an API key →</a>
+          </div>
+
+          <p class="ai-error" id="ai-error" hidden></p>
+        </section>
+      </aside>
+
+      <section class="stage-col">
+        <div class="stage" id="stage">
+          <canvas id="preview" width="448" height="448" aria-label="Generated sprite preview"></canvas>
+          <div class="stage-meta">
+            <span id="badge-dir">S</span>
+            <span class="dot-sep">·</span>
+            <span id="badge-frame">1 / 4</span>
+          </div>
+          <div class="stage-note" id="stage-note">32 × 32</div>
+        </div>
+
+        <div class="stage-controls proc-only">
+          <div class="tabs" id="state-tabs" role="tablist" aria-label="Animation"></div>
+          <div class="playback">
+            <button class="icon-btn" id="btn-play" aria-label="Pause animation" title="Play / pause (space)">❚❚</button>
+            <label class="zoom" for="zoom">
+              <span>Zoom</span>
+              <input id="zoom" type="range" min="6" max="18" value="14" />
+            </label>
+          </div>
+        </div>
+
+        <div class="stage-controls ai-only">
+          <div class="ai-strip-head">
+            <span>Pixel variants</span>
+            <span class="hint" id="ai-variants-meta">none yet</span>
+          </div>
+          <label class="zoom" for="zoom-ai">
+            <span>Zoom</span>
+            <input id="zoom-ai" type="range" min="4" max="18" value="14" />
+          </label>
+        </div>
+
+        <div class="filmstrip" id="filmstrip" aria-label="Animation frames"></div>
+
+        <div class="under-stage">
+          <p class="tip">
+            <span class="proc-only">
+              <strong id="anim-name">Idle</strong> · click a frame to pause on it. Directions on the right show all
+              eight views of the same pose.
+            </span>
+            <span class="ai-only" id="ai-tip">
+              The model draws one front-facing character. Pixel conversion is local — change size or palette and it
+              re-pixelates the same render for free.
+            </span>
+          </p>
+          <button class="btn small" id="btn-export-2">Download sheet</button>
+        </div>
+      </section>
+
+      <aside class="panel panel-right" aria-label="Output">
+        <section class="group proc-only">
+          <div class="group-head">
+            <h2>Directions</h2>
+            <span class="hint" id="dir-hint">8 views</span>
+          </div>
+          <div class="dir-grid" id="dir-grid"></div>
+        </section>
+
+        <section class="group ai-only">
+          <div class="group-head">
+            <h2>Source render</h2>
+            <span class="hint" id="ai-source-meta">—</span>
+          </div>
+          <div class="ai-source">
+            <img id="ai-source-img" alt="The model's raw output before pixel conversion" hidden />
+            <p id="ai-source-empty">Nothing generated yet.</p>
+          </div>
+        </section>
+
+        <section class="group">
+          <div class="group-head">
+            <h2>Palette</h2>
+            <button class="link-btn" id="btn-copy-palette">copy</button>
+          </div>
+          <div class="swatches" id="swatches"></div>
+        </section>
+
+        <section class="group">
+          <div class="group-head">
+            <h2>Export</h2>
+            <div class="segmented" id="scale-group" role="group" aria-label="Export scale">
+              <button data-scale="1" aria-pressed="false">1×</button>
+              <button data-scale="2" aria-pressed="true">2×</button>
+              <button data-scale="4" aria-pressed="false">4×</button>
+            </div>
+          </div>
+          <div class="sheet-preview">
+            <canvas id="sheet-preview" width="256" height="128"></canvas>
+          </div>
+          <p class="micro" id="sheet-meta">8 directions × 4 frames</p>
+          <button class="btn wide" id="btn-download-sheet">Sprite sheet PNG</button>
+          <div class="row-two">
+            <button class="btn small" id="btn-download-frame">Frame PNG</button>
+            <button class="btn small" id="btn-download-json">Metadata</button>
+          </div>
+        </section>
+
+        <section class="group proc-only">
+          <div class="group-head">
+            <h2>Recent</h2>
+            <button class="link-btn" id="btn-clear-history">clear</button>
+          </div>
+          <div class="history" id="history"></div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="footer">
+      <p>
+        PixelForge draws every sprite from a seeded geometry engine, not a neural network — an original, local homage
+        to the workflow of AI pixel-art tools such as PixelLab. Switch to the AI model to have a real image model draw
+        the character instead; either way the 32 × 32 conversion, palette and sheet export stay local.
+      </p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>

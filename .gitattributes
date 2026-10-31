@@ -1,0 +1,3 @@
+# Keep the repository LF so the Pages workflow and server behave the same on
+# every platform.
+* text=auto eol=lf
